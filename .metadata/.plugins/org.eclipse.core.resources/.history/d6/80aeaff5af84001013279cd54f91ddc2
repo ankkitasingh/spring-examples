@@ -10,7 +10,7 @@ public class HelloController {
 
     @GetMapping("/world")
     public String sayHello() {
-        return "Hello test Github to ec2 deployment on push";
+        return "Hello from Github to ec2 deployment on push";
     }
 
 }
