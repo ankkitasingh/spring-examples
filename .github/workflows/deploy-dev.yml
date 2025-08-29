@@ -9,37 +9,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) Checkout source
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Sync code → EC2 target directory
-      - name: Rsync to EC2
-        uses: Burnett01/rsync-deployments@master
-        with:
-          switches: -avz --delete
-          path: ./
-          remote_path: ${{ secrets.EC2_TARGET_DIR }}
-          remote_host: ${{ secrets.EC2_HOST }}
-          remote_user: ${{ secrets.EC2_USER }}
-          remote_key: ${{ secrets.EC2_SSH_KEY }}
+      # 2) Show context
+      - name: Show branch/commit info
+        run: |
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Commit: $GITHUB_SHA"
+          git log --oneline -n 3
 
-      # Build & restart only the app service
-      - name: SSH and deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd ${{ secrets.EC2_TARGET_DIR }}
-            echo "== Docker Compose config =="
-            docker compose config
-            echo "== Build app image =="
-            docker compose build app
-            echo "== Restart app service =="
-            docker compose up -d app
-            echo "== Status =="
-            docker compose ps
-            echo "== Last 80 app log lines =="
-            docker compose logs --tail=80 app
+      # 3) Prepare SSH key
+      - name: Setup SSH key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/gha-ec2
+          chmod 600 ~/.ssh/gha-ec2
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keygen -lf ~/.ssh/gha-ec2 || (echo "Bad private key" && exit 1)
+
+      # 4) Ensure app dir exists on EC2
+      - name: Ensure target dir on EC2
+        run: |
+          ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mkdir -p '${{ secrets.EC2_TARGET_DIR }}' && ls -la '${{ secrets.EC2_TARGET_DIR }}'"
+
+      # 5) Rsync code
+      - name: Rsync module to EC2
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes" \
+            ${{ env.MODULE_DIR }}/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_TARGET_DIR }}/
+
+      # 6) Deploy with Docker Compose
+      - name: Deploy on EC2
+        run: |
+          ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "set -euo pipefail; \
+             cd '${{ secrets.EC2_TARGET_DIR }}'; \
+             echo '== Docker versions =='; docker --version; docker-compose version; \
+             echo '== Effective compose config =='; docker-compose config; \
+             echo '== Build app image =='; docker-compose build app; \
+             echo '== Restart app service =='; docker- compose up -d app; \
+             echo '== Container status =='; docker-compose ps; \
+             echo '== Tail app logs (last 100 lines) =='; docker-compose logs --tail=100 app || true; \
+             echo '== Health check =='; curl -fsS -m 10 http://localhost/actuator/health || true"
