@@ -8,9 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # Default to repo root; change if you deploy a submodule
-      MODULE_DIR: .
-      DOCKER_COMPOSE: "docker compose"   # fallback handled on host too
+      MODULE_DIR: .   # change if you deploy a subfolder
 
     steps:
       - name: Checkout repo
@@ -23,7 +21,6 @@ jobs:
           git log --oneline -n 3 || true
 
       - name: Setup SSH key
-        shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
@@ -32,14 +29,13 @@ ${{ secrets.EC2_SSH_KEY }}
 EOF
           chmod 600 ~/.ssh/gha-ec2
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-          # Quick connectivity test (prints hostname on success)
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "hostname"
+            "${{ secrets.EC2_USER }}"@"${{ secrets.EC2_HOST }}" "hostname"
 
       - name: Ensure target dir on EC2
         run: |
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "${{ secrets.EC2_USER }}"@"${{ secrets.EC2_HOST }}" \
             "mkdir -p '${{ secrets.EC2_TARGET_DIR }}' && ls -la '${{ secrets.EC2_TARGET_DIR }}'"
 
       - name: Rsync code to EC2 (exclude junk)
@@ -59,10 +55,9 @@ EOF
       - name: Deploy on EC2 (build & restart)
         run: |
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "${{ secrets.EC2_USER }}"@"${{ secrets.EC2_HOST }}" \
             "set -euo pipefail; \
              cd '${{ secrets.EC2_TARGET_DIR }}'; \
-             # pick compose command available on host
              if command -v docker-compose >/dev/null 2>&1; then DC='docker-compose'; else DC='docker compose'; fi; \
              echo '== Docker versions =='; docker --version; \$DC version; \
              echo '== Effective compose config =='; \$DC config; \
