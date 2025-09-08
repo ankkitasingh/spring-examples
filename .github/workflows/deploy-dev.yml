@@ -2,61 +2,72 @@ name: Deploy to EC2 (dev)
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: ["dev"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      # Default to repo root; change if you deploy a submodule
+      MODULE_DIR: .
+      DOCKER_COMPOSE: "docker compose"   # fallback handled on host too
 
     steps:
-      # 1) Checkout source
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2) Show context
       - name: Show branch/commit info
         run: |
           echo "Branch: $GITHUB_REF_NAME"
           echo "Commit: $GITHUB_SHA"
-          git log --oneline -n 3
+          git log --oneline -n 3 || true
 
-      # 3) Prepare SSH key
       - name: Setup SSH key
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/gha-ec2
+          cat > ~/.ssh/gha-ec2 <<'EOF'
+${{ secrets.EC2_SSH_KEY }}
+EOF
           chmod 600 ~/.ssh/gha-ec2
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-          ssh-keygen -lf ~/.ssh/gha-ec2 || (echo "Bad private key" && exit 1)
+          # Quick connectivity test (prints hostname on success)
+          ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "hostname"
 
-      # 4) Ensure app dir exists on EC2
       - name: Ensure target dir on EC2
         run: |
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "mkdir -p '${{ secrets.EC2_TARGET_DIR }}' && ls -la '${{ secrets.EC2_TARGET_DIR }}'"
 
-      # 5) Rsync code
-      - name: Rsync module to EC2
+      - name: Rsync code to EC2 (exclude junk)
         run: |
+          RSYNC_SSH="ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes"
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes" \
-            ${{ env.MODULE_DIR }}/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_TARGET_DIR }}/
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.idea/' \
+            --exclude '.metadata/' \
+            --exclude '.gradle/' \
+            --exclude 'target/' \
+            -e "$RSYNC_SSH" \
+            "${{ env.MODULE_DIR }}/" \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_TARGET_DIR }}/"
 
-      # 6) Deploy with Docker Compose
-      - name: Deploy on EC2
+      - name: Deploy on EC2 (build & restart)
         run: |
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "set -euo pipefail; \
              cd '${{ secrets.EC2_TARGET_DIR }}'; \
-             echo '== Docker versions =='; docker --version; docker-compose version; \
-             echo '== Effective compose config =='; docker-compose config; \
-             echo '== Build app image =='; docker-compose build app; \
-             echo '== Restart app service =='; docker- compose up -d app; \
-             echo '== Container status =='; docker-compose ps; \
-             echo '== Tail app logs (last 100 lines) =='; docker-compose logs --tail=100 app || true; \
-             echo '== Health check =='; curl -fsS -m 10 http://localhost/actuator/health || true"
+             # pick compose command available on host
+             if command -v docker-compose >/dev/null 2>&1; then DC='docker-compose'; else DC='docker compose'; fi; \
+             echo '== Docker versions =='; docker --version; \$DC version; \
+             echo '== Effective compose config =='; \$DC config; \
+             echo '== Build app image =='; \$DC build --pull app; \
+             echo '== Restart app service =='; \$DC up -d app; \
+             echo '== Container status =='; \$DC ps; \
+             echo '== Tail app logs (last 100 lines) =='; \$DC logs --tail=100 app || true; \
+             echo '== Health check =='; (curl -fsS -m 10 http://localhost/actuator/health || true)"
