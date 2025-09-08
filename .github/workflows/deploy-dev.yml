@@ -24,9 +24,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          cat > ~/.ssh/gha-ec2 <<'EOF'
-${{ secrets.EC2_SSH_KEY }}
-EOF
+          # write the secret without heredoc to avoid YAML parsing issues
+          printf "%s" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/gha-ec2
           chmod 600 ~/.ssh/gha-ec2
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/gha-ec2 -o StrictHostKeyChecking=yes \
