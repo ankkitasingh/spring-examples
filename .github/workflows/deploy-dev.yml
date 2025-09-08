@@ -21,21 +21,21 @@ jobs:
           git log --oneline -n 3 || true
 
       - name: Setup SSH key
-  run: |
-    set -euo pipefail
-    mkdir -p ~/.ssh
-    echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/gha-ec2
-    # strip any accidental CRLFs
-    sed -i 's/\r$//' ~/.ssh/gha-ec2
-    chmod 600 ~/.ssh/gha-ec2
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/gha-ec2
+          # strip any accidental CRLFs
+          sed -i 's/\r$//' ~/.ssh/gha-ec2
+          chmod 600 ~/.ssh/gha-ec2
 
-    # quick sanity: can ssh-keygen read the private key?
-    ssh-keygen -yf ~/.ssh/gha-ec2 >/dev/null || (echo "Invalid private key" && exit 1)
+          # quick sanity: can ssh-keygen read the private key?
+          ssh-keygen -yf ~/.ssh/gha-ec2 >/dev/null || (echo "Invalid private key" && exit 1)
 
-    # trust host and test connectivity
-    ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-    ssh -i ~/.ssh/gha-ec2 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-      "${{ secrets.EC2_USER }}"@"${{ secrets.EC2_HOST }}" "echo OK && hostname"
+          # trust host and test connectivity
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/gha-ec2 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "${{ secrets.EC2_USER }}"@"${{ secrets.EC2_HOST }}" "echo OK && hostname"
 
       - name: Ensure target dir on EC2
         run: |
