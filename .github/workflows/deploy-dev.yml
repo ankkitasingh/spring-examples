@@ -76,3 +76,4 @@ jobs:
              echo '== Compose ps =='; \$DC -f \"\$COMP_FILE\" --project-directory \"\$COMP_DIR\" ps; \
              echo '== Logs (last 100) =='; \$DC -f \"\$COMP_FILE\" --project-directory \"\$COMP_DIR\" logs --tail=100 || true; \
              echo '== Health check (optional) =='; (curl -fsS -m 10 http://localhost/actuator/health || true)"
+
