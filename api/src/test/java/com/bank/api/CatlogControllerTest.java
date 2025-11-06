@@ -14,8 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
+
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,8 +34,6 @@ import com.bank.api.services.CatalogService;
 		    }
 		)*/
 @WebMvcTest(controllers = CatalogController.class)
-@ContextConfiguration(classes = CatalogController.class)
-@ActiveProfiles("test")
 public class CatlogControllerTest {
 	
 	
