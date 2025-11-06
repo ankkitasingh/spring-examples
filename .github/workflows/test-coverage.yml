@@ -2,9 +2,9 @@ name: ✅ Build & Test with Coverage
 
 on:
   push:
-    branches: [main, develop, dev, feature/**]
+    branches: [main, develop, dev, feature**]
   pull_request:
-    branches: [main, develop, dev, feature/**]
+    branches: [main, develop, dev, feature**]
 
 jobs:
   test:
