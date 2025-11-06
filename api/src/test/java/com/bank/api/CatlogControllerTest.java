@@ -62,6 +62,7 @@ public class CatlogControllerTest {
 
     @Test
     void shouldReturnTopSellers() throws Exception {
+    	
     	TopSellerView top1 = new TopSellerView() {
             @Override public Long getProductId() { return 1L; }
             @Override public String getProductName() { return "iPhone"; }
