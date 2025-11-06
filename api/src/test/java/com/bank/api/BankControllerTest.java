@@ -5,6 +5,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 import org.springframework.http.MediaType;
@@ -22,8 +25,15 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ActiveProfiles("test")
-@WebMvcTest(BankController.class)
+
+@WebMvcTest(
+		controllers = BankController.class,
+		excludeAutoConfiguration = {
+		        DataSourceAutoConfiguration.class,
+		        HibernateJpaAutoConfiguration.class,
+		        JpaRepositoriesAutoConfiguration.class
+		    }
+		)
 public class BankControllerTest {
 
 	 // MockMvc simulates HTTP requests to the controller
