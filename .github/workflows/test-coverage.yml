@@ -1,8 +1,6 @@
 name: ✅ Build & Test with Coverage
 
 on:
-  push:
-    branches: [main, develop, dev, feature/**]   # 👈 Added dev here
   pull_request:
     branches: [main, develop, dev]
 
