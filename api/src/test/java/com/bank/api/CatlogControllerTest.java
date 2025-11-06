@@ -10,13 +10,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,14 +26,17 @@ import com.bank.api.dto.TopSellerView;
 import com.bank.api.model.Product;
 import com.bank.api.services.CatalogService;
 
-@WebMvcTest(
+/*@WebMvcTest(
 		controllers = CatalogController.class,
 		excludeAutoConfiguration = {
 		        DataSourceAutoConfiguration.class,
 		        HibernateJpaAutoConfiguration.class,
 		        JpaRepositoriesAutoConfiguration.class
 		    }
-		)
+		)*/
+@WebMvcTest(controllers = CatalogController.class)
+@ContextConfiguration(classes = CatalogController.class)
+@ActiveProfiles("test")
 public class CatlogControllerTest {
 	
 	
