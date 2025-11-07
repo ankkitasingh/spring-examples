@@ -12,10 +12,14 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+
 import org.springframework.test.web.servlet.MockMvc;
+
 
 import com.bank.api.controller.OrderController;
 import com.bank.api.model.Order;
@@ -25,7 +29,15 @@ import com.bank.api.model.User;
 import com.bank.api.services.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@WebMvcTest(OrderController.class)
+/*@WebMvcTest(
+		controllers = OrderController.class,
+		excludeAutoConfiguration = {
+		        DataSourceAutoConfiguration.class,
+		        HibernateJpaAutoConfiguration.class,
+		        JpaRepositoriesAutoConfiguration.class
+		    }
+		)*/
+@WebMvcTest(controllers = OrderController.class)
 public class OrderControllerTest {
 	
 	
@@ -35,7 +47,7 @@ public class OrderControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @MockBean
     private OrderService orders;
 
     @Test

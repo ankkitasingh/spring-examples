@@ -10,11 +10,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+
 import org.springframework.test.web.servlet.MockMvc;
+
 
 import com.bank.api.controller.CatalogController;
 import com.bank.api.dto.ProductSummary;
@@ -22,8 +26,15 @@ import com.bank.api.dto.TopSellerView;
 import com.bank.api.model.Product;
 import com.bank.api.services.CatalogService;
 
-
-@WebMvcTest(CatalogController.class)
+/*@WebMvcTest(
+		controllers = CatalogController.class,
+		excludeAutoConfiguration = {
+		        DataSourceAutoConfiguration.class,
+		        HibernateJpaAutoConfiguration.class,
+		        JpaRepositoriesAutoConfiguration.class
+		    }
+		)*/
+@WebMvcTest(controllers = CatalogController.class)
 public class CatlogControllerTest {
 	
 	
@@ -32,7 +43,7 @@ public class CatlogControllerTest {
     private MockMvc mockMvc;
 
     // Mock dependencies (the controller depends on these)
-    @MockitoBean
+    @MockBean
     private CatalogService catalog;
     
     

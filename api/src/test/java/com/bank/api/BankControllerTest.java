@@ -5,10 +5,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.bank.api.controller.BankController;
@@ -21,7 +23,17 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BankController.class)
+
+/*@WebMvcTest(
+		controllers = BankController.class,
+		excludeAutoConfiguration = {
+		        DataSourceAutoConfiguration.class,
+		        HibernateJpaAutoConfiguration.class,
+		        JpaRepositoriesAutoConfiguration.class
+		    }
+		)*/
+
+@WebMvcTest(controllers = BankController.class)
 public class BankControllerTest {
 
 	 // MockMvc simulates HTTP requests to the controller
@@ -33,10 +45,10 @@ public class BankControllerTest {
     private ObjectMapper objectMapper;
 
     // Mock dependencies (the controller depends on these)
-    @MockitoBean
+    @MockBean
     private BankService bank;
 
-    @MockitoBean
+    @MockBean
     private AccountRepository accounts;
 
     @Test
